@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180212.1
+// @version     20180213.1
 // @run-at      document-end
 // @require     http://libs.baidu.com/jquery/1.10.1/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -16,6 +16,7 @@
 
 var product_id = null,
 game_id = null;
+
 function getToken(j) {
     var ret;
     jQuery.ajax({
@@ -49,6 +50,11 @@ function refresh() {
         GM_setValue("access_token", j.access_token);
     } else
         alert(j.message);
+    var login_info = GM_getValue('user_name') ? GM_getValue('user_name') : '未存储';
+    jQuery('#stored_acc').text('存储的账号: ' + login_info);
+    if (GM_getValue('user_name')) {
+        jQuery('#get_serial_number').text('点击提取序列号');
+    }
 }
 
 function update() {
@@ -88,9 +94,9 @@ function update() {
 function getKey() {
     var at = GM_getValue("access_token");
     var rep;
-    if (!at)
+    if (!at) {
         refresh();
-    else {
+    } else {
         jQuery.ajax({
             url: "https://www.sonkwo.com/api/game_key.json",
             data: {
@@ -113,7 +119,7 @@ function getKey() {
             for (var i = 0; i < keys.length; ++i) {
                 var d = keys[i];
                 div.append('<div style="margin-bottom:2px;font-size:14px">' + d.type_desc + '</div>');
-                div.append('<input type="text" style="width:100%;font-size:16px;color:#7a80a2;background-color:#31374e;border:0;border-radius:2px" readonly="readonly" onfocus="this.select();" value="' + d.code + '" /> ');
+                div.append('<input type="text" style="width:100%;font-size:16px;color:#7a80a2;background-color:#31374e;border:0;border-radius:2px" readonly="readonly" onmouseover="this.select();" value="' + d.code + '" /> ');
             }
             jQuery('.btns-block').after(div);
             div.slideDown();
@@ -132,6 +138,8 @@ function clear() {
     GM_deleteValue("user_pwd");
     GM_deleteValue("refresh_token");
     GM_deleteValue("access_token");
+    jQuery('#stored_acc').text('存储的账号: 未存储');
+    jQuery('#get_serial_number').text('登录提取序列号');
     alert("已清除");
 }
 
@@ -147,7 +155,11 @@ jQuery(function () {
             game_id = game_id[1];
         var o = jQuery("div.btn-common-css.already-pur");
         if (o.length && !jQuery('#get_serial_number').length) {
-            o.replaceWith('<a id="get_serial_number" class="add-cart active btn-common-css" title="已拥有" style="">点击提取序列号</a> <a id="clear_user" class="one-click active btn-common-css" style="">清除账号数据</a>');
+            var login_info = GM_getValue('user_name') ? GM_getValue('user_name') : '未存储';
+            o.replaceWith('<div id="stored_acc" style="color:#7a80a2;margin-bottom:3px">存储的账号: '+login_info+'</div><a id="get_serial_number" class="add-cart active btn-common-css" title="已拥有" style="">点击提取序列号</a> <a id="clear_user" class="one-click active btn-common-css" style="">清除账号数据</a>');
+            if (!GM_getValue('user_name')) {
+                jQuery('#get_serial_number').text('登录提取序列号');
+            }
             jQuery('#get_serial_number').click(function () {
                 getKey();
             });
@@ -156,7 +168,7 @@ jQuery(function () {
             });
         }
         if (jQuery('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !jQuery('.game-sale-block.common-bg span.my-evaluation.my-evaluation-title').length) {
-            jQuery('.game-sale-block .tag-list').after(' <span class="my-evaluation my-evaluation-title" style="color:red;font-size:24px;font-weight:bold;margin-top:3px">注意：可能非Steam激活</span>');
+            jQuery('.game-sale-block .tag-list').after(' <span class="my-evaluation my-evaluation-title" style="color:#ff6900;font-size:24px;font-weight:bold;margin-top:3px">注意：可能非Steam激活</span>');
         }
     }, 3000);
 });
