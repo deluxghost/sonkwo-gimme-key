@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20171219
+// @version     20180212.1
 // @run-at      document-end
 // @require     http://libs.baidu.com/jquery/1.10.1/jquery.min.js
 // @grant       GM_xmlhttpRequest
