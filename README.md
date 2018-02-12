@@ -1,4 +1,4 @@
-# Sonkwo Gimmy Key
+# Sonkwo Gimme Key
 
 此脚本用于在线提取杉果序列号，免去安装客户端的麻烦。
 
