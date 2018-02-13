@@ -5,17 +5,19 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180213.3
+// @version     20180213.4
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
+// @grant       GM_setClipboard
 // ==/UserScript==
 
 var product_id = null,
-game_id = null;
+    game_id = null,
+    client_removed = false;
 
 function setCSS() {
     css = [
@@ -27,8 +29,22 @@ function setCSS() {
         "    border-radius: 2px;",
         "}",
         ".sgk_key_desc {",
+        "    display: inline-block;",
         "    font-size: 14px;",
         "    margin-bottom: 2px;",
+        "}",
+        ".sgk_key_copy {",
+        "    display: inline-block;",
+        "    background-color: #487dd9;",
+        "    color: white;",
+        "    font-size: 13px;",
+        "    border: 0;",
+        "    border-radius: 2px;",
+        "    padding: 1px 3px;",
+        "    margin-left: 3px;",
+        "}",
+        ".sgk_key_copy:hover {",
+        "    background-color: #5693fe;",
         "}",
         ".sgk_key_text {",
         "    width: 100%;",
@@ -40,7 +56,8 @@ function setCSS() {
         "}",
         ".sgk_gameinfo_text {",
         "    color: #7a80a2;",
-        "    margin-bottom: 3px;",
+        "    font-size: 14px;",
+        "    margin-bottom: 4px;",
         "}",
         ".sgk_steam_warning {",
         "    padding: 20px;",
@@ -72,7 +89,7 @@ function setCSS() {
 
 function getToken(jsondata) {
     var tokens;
-    jQuery.ajax({
+    $.ajax({
         url: '/oauth2/token.json',
         method: 'POST',
         async: false,
@@ -141,7 +158,7 @@ function get_key() {
     if (!access_token) {
         refresh();
     } else {
-        jQuery.ajax({
+        $.ajax({
             url: '/api/game_key.json',
             data: {
                 'game_id': game_id,
@@ -158,14 +175,18 @@ function get_key() {
         var keys = resp.responseJSON;
         if (keys.game_keys) {
             keys = keys.game_keys;
-            jQuery('#sgk_keybox').remove();
-            var keybox = jQuery('<div id="sgk_keybox" style="display:none"></div>');
-            for (var i = 0; i < keys.length; ++i) {
+            $('#sgk_keybox').remove();
+            var keybox = $('<div id="sgk_keybox" style="display:none"></div>');
+            for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
                 keybox.append('<div class="sgk_key_desc">' + key.type_desc + '</div>');
-                keybox.append('<input type="text" class="sgk_key_text" readonly="readonly" onmouseover="this.select();" value="' + key.code + '" />');
+                keybox.append('<input type="button" class="sgk_key_copy" value="复制" />');
+                keybox.append('<input type="text" class="sgk_key_text" readonly="readonly" onfocus="this.select();" value="' + key.code + '" />');
             }
-            jQuery('.btns-block').after(keybox);
+            $('.btns-block').after(keybox);
+            $('.sgk_key_copy').click(function () {
+                copy_key($(this));
+            });
             keybox.slideDown();
         } else if (resp.status === 401) {
             if (refresh() !== false)
@@ -186,20 +207,41 @@ function clear_user() {
     update_login_ui();
 }
 
+function copy_key(copy) {
+    var key = $(copy).next('.sgk_key_text').attr('value');
+    $(copy).next('.sgk_key_text').select();
+    GM_setClipboard(key);
+}
+
 function update_login_ui() {
     var username = GM_getValue('user_name');
     if (username) {
-        jQuery('#sgk_stored_acc').text('存储的账号: ' + username);
-        jQuery('#sgk_get_key').text('点击提取序列号');
+        $('#sgk_stored_acc').text('存储的账号: ' + username);
+        $('#sgk_get_key').text('点击提取序列号');
     } else {
-        jQuery('#sgk_stored_acc').text('存储的账号: 未存储');
-        jQuery('#sgk_get_key').text('登录提取序列号');
+        $('#sgk_stored_acc').text('存储的账号: 未存储');
+        $('#sgk_get_key').text('登录提取序列号');
     }
 }
 
-jQuery(function () {
+function remove_client() {
+    if (client_removed)
+        return;
+    var navs = $('.SK-header-nav .item a');
+    for (var i = 0; i < navs.length; i++) {
+        var nav = $(navs[i])
+        if (nav.text() == '客户端' && nav.parent().attr('class') == 'item') {
+            nav.remove();
+            client_removed = true;
+            break;
+        }
+    }
+}
+
+$(function () {
     setCSS();
     window.setInterval(function () {
+        remove_client();
         if (!location.href.match('^https:\/\/www\.sonkwo\.com\/products\/.'))
             return;
         product_id = /products\/(\d*)/.exec(location.href)[1];
@@ -208,8 +250,8 @@ jQuery(function () {
             game_id = product_id;
         else
             game_id = game_id[1];
-        var purchased = jQuery('div.btn-common-css.already-pur');
-        if (purchased.length && !jQuery('#sgk_get_key').length) {
+        var purchased = $('div.btn-common-css.already-pur');
+        if (purchased.length && !$('#sgk_get_key').length) {
             var buttons = [
                 '<div id="sgk_stored_acc" class="sgk_gameinfo_text">存储的账号: 未存储</div>',
                 '<a id="sgk_get_key" class="add-cart active btn-common-css">登录提取序列号</a>',
@@ -217,15 +259,15 @@ jQuery(function () {
             ].join('\n');
             purchased.replaceWith(buttons);
             update_login_ui();
-            jQuery('#sgk_get_key').click(function () {
+            $('#sgk_get_key').click(function () {
                 get_key();
             });
-            jQuery('#sgk_clear_user').click(function () {
+            $('#sgk_clear_user').click(function () {
                 clear_user();
             });
         }
-        if (jQuery('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !jQuery('.sgk_steam_warning').length) {
-            jQuery('.game-sale-block .tag-list').after('<span class="sgk_steam_warning">注意: 可能非Steam激活</span>');
+        if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !$('.sgk_steam_warning').length) {
+            $('.game-sale-block .tag-list').after('<span class="sgk_steam_warning">注意: 可能非Steam激活</span>');
         }
     }, 3000);
 });
