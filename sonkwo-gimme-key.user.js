@@ -133,10 +133,11 @@ function update() {
     var userpass = GM_getValue('user_pwd');
     if (!username) {
         username = prompt('请输入杉果账号');
+        if (!username)
+            return false;
         userpass = prompt('请输入密码');
-    }
-    if (!username) {
-        return false;
+        if (!userpass)
+            return false;
     }
     var tokens = getToken(JSON.stringify({
 		'grant_type': 'password',
