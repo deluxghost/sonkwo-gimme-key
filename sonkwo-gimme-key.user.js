@@ -59,13 +59,16 @@ function setCSS() {
         "    font-size: 14px;",
         "    margin-bottom: 4px;",
         "}",
-        ".sgk_steam_warning {",
-        "    padding: 20px;",
+        ".sgk_warning_text {",
+        "    padding-left: 20px;",
         "    color: #ff6900;",
         "    font-size: 24px;",
         "    font-weight: bold;",
         "    margin-top: 3px;",
         "    margin-bottom: 5px;",
+        "}",
+        ".sgk_warning_icon {",
+        "    font-size: 22px;",
         "}"
     ].join('\n');
     if (typeof GM_addStyle != "undefined") {
@@ -238,6 +241,16 @@ function remove_client() {
     }
 }
 
+function check_chinese() {
+    var lang = $('.game-language .item-content .item a');
+    for (var i = 0; i < lang.length; i++) {
+        var tag = $(lang[i]);
+        if (tag.text().indexOf('中文') !== -1)
+            return true;
+    }
+    return false;
+}
+
 $(function () {
     setCSS();
     window.setInterval(function () {
@@ -266,8 +279,12 @@ $(function () {
                 clear_user();
             });
         }
-        if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !$('.sgk_steam_warning').length) {
-            $('.game-sale-block .tag-list').after('<span class="sgk_steam_warning">注意: 可能非Steam激活</span>');
+        var warn_icon = '<i class="sgk_warning_icon fa fa-exclamation-triangle"></i> ';
+        if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !$('#sgk_steam_warning').length) {
+            $('.game-sale-block .tag-list').after('<div id="sgk_steam_warning" class="sgk_warning_text">' + warn_icon + '可能非 Steam 激活</div>');
+        }
+        if (!check_chinese() && !$('#sgk_chn_warning').length) {
+            $('.game-sale-block .tag-list').after('<div id="sgk_chn_warning" class="sgk_warning_text">' + warn_icon + '不支持中文语言</div>');
         }
     }, 3000);
 });
