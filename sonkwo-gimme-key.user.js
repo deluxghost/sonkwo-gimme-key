@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180213.2
+// @version     20180213.3
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -70,130 +70,131 @@ function setCSS() {
 	}
 }
 
-function getToken(j) {
-    var ret;
+function getToken(jsondata) {
+    var tokens;
     jQuery.ajax({
         url: '/oauth2/token.json',
         method: 'POST',
         async: false,
         contentType: 'application/json, text/plain, */*',
-        data: j,
-        complete: function (d) {
-            if (d.status == '401') {
-                ret = 401;
-            } else
-                ret = d.responseJSON;
+        data: jsondata,
+        complete: function (data) {
+            if (data.status == '401') {
+                tokens = 401;
+            } else {
+                tokens = data.responseJSON;
+            }
         }
     });
-    return ret;
+    return tokens;
 }
 
 function refresh() {
-    var rt = GM_getValue('refresh_token');
-    var j = getToken(JSON.stringify({
-		'grant_type': 'refresh_token',
-		'refresh_token': rt
-	}));
-    if (j == 401) {
+    var refresh_token = GM_getValue('refresh_token');
+    var tokens = getToken(JSON.stringify({
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token
+    }));
+    if (tokens == 401) {
         if (update() === false)
             return false;
-        refresh();
-    } else if (j.access_token) {
-        GM_setValue('refresh_token', j.refresh_token);
-        GM_setValue('access_token', j.access_token);
-    } else
-        alert(j.message);
-    var login_info = GM_getValue('user_name') ? GM_getValue('user_name') : '未存储';
-    jQuery('#sgk_stored_acc').text('存储的账号: ' + login_info);
-    if (GM_getValue('user_name')) {
-        jQuery('#sgk_get_key').text('点击提取序列号');
+        return refresh();
+    } else if (tokens.access_token) {
+        GM_setValue('refresh_token', tokens.refresh_token);
+        GM_setValue('access_token', tokens.access_token);
+    } else {
+        alert('错误: ' + tokens.message);
     }
+    update_login_ui();
 }
 
 function update() {
-    var un = GM_getValue('user_name');
-    var up = GM_getValue('user_pwd');
-    if (!un) {
-        un = prompt('请输入杉果账号');
-        up = prompt('请输入密码');
+    var username = GM_getValue('user_name');
+    var userpass = GM_getValue('user_pwd');
+    if (!username) {
+        username = prompt('请输入杉果账号');
+        userpass = prompt('请输入密码');
     }
-    if (!un) {
+    if (!username) {
         return false;
     }
-    var j = getToken(JSON.stringify({
+    var tokens = getToken(JSON.stringify({
 		'grant_type': 'password',
-		'login_name': un,
-		'password': up,
+		'login_name': username,
+		'password': userpass,
 		'type': 'client'
 	}));
-    if (j.access_token) {
-        GM_setValue('user_name', un);
-        GM_setValue('user_pwd', up);
-        GM_setValue('refresh_token', j.refresh_token);
-        GM_setValue('access_token', j.access_token);
+    if (tokens.access_token) {
+        GM_setValue('user_name', username);
+        GM_setValue('user_pwd', userpass);
+        GM_setValue('refresh_token', tokens.refresh_token);
+        GM_setValue('access_token', tokens.access_token);
     } else {
-        if (confirm(j.message)) {
-            un = prompt('请输入杉果账号');
-            up = prompt('请输入密码');
-            GM_setValue('user_name', un);
-            GM_setValue('user_pwd', up);
-            update();
-        } else {
-            return false;
-        }
+        alert('错误: ' + tokens.message);
+        return false;
     }
 }
 
-function getKey() {
-    var at = GM_getValue("access_token");
-    var rep;
-    if (!at) {
+function get_key() {
+    var access_token = GM_getValue("access_token");
+    var resp;
+    if (!access_token) {
         refresh();
     } else {
         jQuery.ajax({
-            url: 'https://www.sonkwo.com/api/game_key.json',
+            url: '/api/game_key.json',
             data: {
                 'game_id': game_id,
-                'access_token': at
+                'access_token': access_token
             },
-            mthod: 'get',
+            method: 'GET',
             async: false,
             complete: function (data) {
                 if (data.status == 401)
                     refresh();
-                rep = data;
+                resp = data;
             }
         });
-        var keys = rep.responseJSON;
+        var keys = resp.responseJSON;
         if (keys.game_keys) {
             keys = keys.game_keys;
             jQuery('#sgk_keybox').remove();
-            var div = jQuery('<div id="sgk_keybox" style="display:none"></div>');
+            var keybox = jQuery('<div id="sgk_keybox" style="display:none"></div>');
             for (var i = 0; i < keys.length; ++i) {
-                var d = keys[i];
-                div.append('<div class="sgk_key_desc">' + d.type_desc + '</div>');
-                div.append('<input type="text" class="sgk_key_text" readonly="readonly" onmouseover="this.select();" value="' + d.code + '" /> ');
+                var key = keys[i];
+                keybox.append('<div class="sgk_key_desc">' + key.type_desc + '</div>');
+                keybox.append('<input type="text" class="sgk_key_text" readonly="readonly" onmouseover="this.select();" value="' + key.code + '" />');
             }
-            jQuery('.btns-block').after(div);
-            div.slideDown();
-        } else if (rep.status === 401) {
+            jQuery('.btns-block').after(keybox);
+            keybox.slideDown();
+        } else if (resp.status === 401) {
             if (refresh() !== false)
                 getKey();
-        } else
-            alert(keys.message);
+        } else {
+            alert('错误: ' + keys.message);
+        }
     }
 }
 
-function clear() {
-    if (!confirm('清除账号数据？'))
+function clear_user() {
+    if (!confirm('将会清除 SGK 插件存储的杉果账号数据。\n继续吗？'))
         return;
     GM_deleteValue('user_name');
     GM_deleteValue('user_pwd');
     GM_deleteValue('refresh_token');
     GM_deleteValue('access_token');
-    jQuery('#sgk_stored_acc').text('存储的账号: 未存储');
-    jQuery('#sgk_get_key').text('登录提取序列号');
-    alert("已清除");
+    update_login_ui();
+}
+
+function update_login_ui() {
+    var username = GM_getValue('user_name');
+    if (username) {
+        jQuery('#sgk_stored_acc').text('存储的账号: ' + username);
+        jQuery('#sgk_get_key').text('点击提取序列号');
+    } else {
+        jQuery('#sgk_stored_acc').text('存储的账号: 未存储');
+        jQuery('#sgk_get_key').text('登录提取序列号');
+    }
 }
 
 jQuery(function () {
@@ -207,22 +208,24 @@ jQuery(function () {
             game_id = product_id;
         else
             game_id = game_id[1];
-        var o = jQuery('div.btn-common-css.already-pur');
-        if (o.length && !jQuery('#sgk_get_key').length) {
-            var login_info = GM_getValue('user_name') ? GM_getValue('user_name') : '未存储';
-            o.replaceWith('<div id="sgk_stored_acc" class="sgk_gameinfo_text">存储的账号: '+login_info+'</div><a id="sgk_get_key" class="add-cart active btn-common-css" title="已拥有" style="">点击提取序列号</a> <a id="sgk_clear_user" class="one-click active btn-common-css" style="">清除账号数据</a>');
-            if (!GM_getValue('user_name')) {
-                jQuery('#sgk_get_key').text('登录提取序列号');
-            }
+        var purchased = jQuery('div.btn-common-css.already-pur');
+        if (purchased.length && !jQuery('#sgk_get_key').length) {
+            var buttons = [
+                '<div id="sgk_stored_acc" class="sgk_gameinfo_text">存储的账号: 未存储</div>',
+                '<a id="sgk_get_key" class="add-cart active btn-common-css">登录提取序列号</a>',
+                '<a id="sgk_clear_user" class="one-click active btn-common-css">清除账号数据</a>'
+            ].join('\n');
+            purchased.replaceWith(buttons);
+            update_login_ui();
             jQuery('#sgk_get_key').click(function () {
-                getKey();
+                get_key();
             });
             jQuery('#sgk_clear_user').click(function () {
-                clear();
+                clear_user();
             });
         }
         if (jQuery('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !jQuery('.sgk_steam_warning').length) {
-            jQuery('.game-sale-block .tag-list').after('<span class="sgk_steam_warning">注意：可能非Steam激活</span>');
+            jQuery('.game-sale-block .tag-list').after('<span class="sgk_steam_warning">注意: 可能非Steam激活</span>');
         }
     }, 3000);
 });
