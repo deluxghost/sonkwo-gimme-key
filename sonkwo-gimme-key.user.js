@@ -233,7 +233,7 @@ function remove_client() {
         return;
     var navs = $('.SK-header-nav .item a');
     for (var i = 0; i < navs.length; i++) {
-        var nav = $(navs[i])
+        var nav = $(navs[i]);
         if (nav.text() == '客户端' && nav.parent().attr('class') == 'item') {
             nav.remove();
             client_removed = true;
