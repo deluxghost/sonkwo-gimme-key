@@ -256,6 +256,7 @@ $(function () {
     setCSS();
     window.setInterval(function () {
         remove_client();
+        $('.new-order-complete-action-block .right.btn').remove();
         if (!location.href.match('^https:\/\/www\.sonkwo\.com\/products\/.'))
             return;
         product_id = /products\/(\d*)/.exec(location.href)[1];
