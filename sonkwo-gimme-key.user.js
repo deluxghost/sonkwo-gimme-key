@@ -282,7 +282,7 @@ $(function () {
             });
         }
         var warn_icon = '<i class="sgk_warning_icon fa fa-exclamation-triangle"></i> ';
-        if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') <= 0 && !$('#sgk_steam_warning').length) {
+        if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') < 0 && !$('#sgk_steam_warning').length) {
             $('.game-sale-block .tag-list').after('<div id="sgk_steam_warning" class="sgk_warning_text">' + warn_icon + '可能非 Steam 激活</div>');
         }
         if (!check_chinese() && !$('#sgk_chn_warning').length) {
