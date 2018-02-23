@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180213.5
+// @version     20180223.1
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -21,6 +21,9 @@ var product_id = null,
 
 function setCSS() {
     css = [
+        "#sgk_show_box {",
+        "    padding: 10px 20px 0 20px;",
+        "}",
         "#sgk_keybox {",
         "    background-color: #292e41;",
         "    color: #b9c0ef;",
@@ -33,7 +36,7 @@ function setCSS() {
         "    font-size: 14px;",
         "    margin-bottom: 2px;",
         "}",
-        ".sgk_key_copy {",
+        ".sgk_normal_button {",
         "    display: inline-block;",
         "    background-color: #487dd9;",
         "    color: white;",
@@ -41,10 +44,12 @@ function setCSS() {
         "    border: 0;",
         "    border-radius: 2px;",
         "    padding: 1px 3px;",
-        "    margin-left: 3px;",
         "}",
-        ".sgk_key_copy:hover {",
+        ".sgk_normal_button:hover {",
         "    background-color: #5693fe;",
+        "}",
+        ".sgk_key_copy {",
+        "    margin-left: 3px;",
         "}",
         ".sgk_key_text {",
         "    width: 100%;",
@@ -184,7 +189,7 @@ function get_key() {
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
                 keybox.append('<div class="sgk_key_desc">' + key.type_desc + '</div>');
-                keybox.append('<input type="button" class="sgk_key_copy" value="复制" />');
+                keybox.append('<input type="button" class="sgk_normal_button sgk_key_copy" value="复制" />');
                 keybox.append('<input type="text" class="sgk_key_text" readonly="readonly" onfocus="this.select();" value="' + key.code + '" />');
             }
             $('.btns-block').after(keybox);
@@ -215,6 +220,37 @@ function copy_key(copy) {
     var key = $(copy).next('.sgk_key_text').attr('value');
     $(copy).next('.sgk_key_text').select();
     GM_setClipboard(key);
+}
+
+function open_sgk() {
+    var buttons = [
+        '<div id="sgk_stored_acc" class="sgk_gameinfo_text">存储的账号: 未存储</div>',
+        '<a id="sgk_get_key" class="add-cart active btn-common-css">登录提取序列号</a>',
+        '<a id="sgk_clear_user" class="one-click active btn-common-css">清除账号数据</a>'
+    ].join('\n');
+    $('.game-sale-block.common-bg .btns-block').html(buttons);
+    update_login_ui();
+    $('#sgk_get_key').click(function () {
+        get_key();
+    });
+    $('#sgk_clear_user').click(function () {
+        clear_user();
+    });
+}
+
+function add_toggle_button() {
+    var show_buttons = [
+        '<div id="sgk_show_box"><input type="button" class="sgk_normal_button sgk_open" value="如果已购买，点此提取激活码" /></div>'
+    ].join('\n');
+    $('.game-sale-block.common-bg .btns-block').before(show_buttons);
+    $('#sgk_show_box').click(function () {
+        if ($('#sgk_show_box .sgk_open').attr('value') == '如果已购买，点此提取激活码') {
+            open_sgk();
+            $('#sgk_show_box .sgk_open').attr('value', '刷新页面恢复购买按钮');
+        } else {
+            location.reload();
+        }
+    });
 }
 
 function update_login_ui() {
@@ -265,21 +301,14 @@ $(function () {
             game_id = product_id;
         else
             game_id = game_id[1];
-        var purchased = $('div.btn-common-css.already-pur');
-        if (purchased.length && !$('#sgk_get_key').length) {
-            var buttons = [
-                '<div id="sgk_stored_acc" class="sgk_gameinfo_text">存储的账号: 未存储</div>',
-                '<a id="sgk_get_key" class="add-cart active btn-common-css">登录提取序列号</a>',
-                '<a id="sgk_clear_user" class="one-click active btn-common-css">清除账号数据</a>'
-            ].join('\n');
-            purchased.replaceWith(buttons);
-            update_login_ui();
-            $('#sgk_get_key').click(function () {
-                get_key();
-            });
-            $('#sgk_clear_user').click(function () {
-                clear_user();
-            });
+        var purchased = $('.btn-common-css.already-pur');
+        if (!$('#sgk_get_key').length && !$('#sgk_show_box').length || purchased.length) {
+            if (purchased.length) {
+                $('#sgk_show_box').remove();
+                open_sgk();
+            } else {
+                add_toggle_button();
+            }
         }
         var warn_icon = '<i class="sgk_warning_icon fa fa-exclamation-triangle"></i> ';
         if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') < 0 && !$('#sgk_steam_warning').length) {
@@ -288,5 +317,5 @@ $(function () {
         if (!check_chinese() && !$('#sgk_chn_warning').length) {
             $('.game-sale-block .tag-list').after('<div id="sgk_chn_warning" class="sgk_warning_text">' + warn_icon + '不支持中文语言</div>');
         }
-    }, 3000);
+    }, 1200);
 });
