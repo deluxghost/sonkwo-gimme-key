@@ -128,7 +128,7 @@ function refresh() {
         GM_setValue('refresh_token', tokens.refresh_token);
         GM_setValue('access_token', tokens.access_token);
     } else {
-        alert('错误: ' + tokens.message);
+        alert('来自杉果的错误: ' + tokens.message + '\n插件建议：检查用户名和密码是否正确，清除账号数据后重试。');
     }
     update_login_ui();
 }
@@ -156,7 +156,7 @@ function update() {
         GM_setValue('refresh_token', tokens.refresh_token);
         GM_setValue('access_token', tokens.access_token);
     } else {
-        alert('错误: ' + tokens.message);
+        alert('来自杉果的错误: ' + tokens.message + '\n插件建议：检查用户名和密码是否正确，清除账号数据后重试。');
         return false;
     }
 }
@@ -201,7 +201,10 @@ function get_key() {
             if (refresh() !== false)
                 getKey();
         } else {
-            alert('错误: ' + keys.message);
+            if (keys.message == 'unknow error')
+                alert('来自杉果的错误: ' + keys.message + '\n插件建议：检查该账号是否确实购买了此物品，检查插件的账号与杉果登录的账号是否一致，否则清除账号数据后重试。');
+            else
+                alert('来自杉果的错误: ' + keys.message);
         }
     }
 }
@@ -292,6 +295,8 @@ $(function () {
     setCSS();
     window.setInterval(function () {
         remove_client();
+        if ($('.tag-list .brief-info-placeholder').text().trim() == '')
+            $('.tag-list .brief-info-placeholder').remove();
         $('.new-order-complete-action-block .right.btn').remove();
         if (!location.href.match('^https:\/\/www\.sonkwo\.com\/products\/.'))
             return;
@@ -311,11 +316,24 @@ $(function () {
             }
         }
         var warn_icon = '<i class="sgk_warning_icon fa fa-exclamation-triangle"></i> ';
-        if ($('.system-tab-content').text().search('【Steam】本游戏运行需通过') < 0 && !$('#sgk_steam_warning').length) {
-            $('.game-sale-block .tag-list').after('<div id="sgk_steam_warning" class="sgk_warning_text">' + warn_icon + '可能非 Steam 激活</div>');
-        }
-        if (!check_chinese() && !$('#sgk_chn_warning').length) {
+        if (!$('#sgk_chn_warning').length && !check_chinese()) {
             $('.game-sale-block .tag-list').after('<div id="sgk_chn_warning" class="sgk_warning_text">' + warn_icon + '不支持中文语言</div>');
+        }
+        if (!$('#sgk_cantunredeem_warning').length && $('.new-content-left').text().search('不支持反激活') >= 0) {
+            $('.game-sale-block .tag-list').after('<div id="sgk_cantunredeem_warning" class="sgk_warning_text">' + warn_icon + '不支持反激活</div>');
+        }
+        if (!$('#sgk_securom_warning').length && $('.new-content-left').text().search('游戏为Securom加密') >= 0) {
+            var max_redeem = /(\d*)台计算机激活/.exec($('.new-content-left').text());
+            var max_redeem_str = '';
+            if (max_redeem !== null)
+                max_redeem_str = ' (×' + max_redeem[1] + ')';
+            $('.game-sale-block .tag-list').after('<div id="sgk_securom_warning" class="sgk_warning_text">' + warn_icon + 'Securom 加密' + max_redeem_str + '</div>');
+        }
+        if (!$('#sgk_steam_warning').length && $('.new-content-left').text().search('【Steam】本游戏运行需通过') < 0) {
+            var platform = '可能非 Steam 激活';
+            if ($('.new-content-left').text().search('【Uplay】本游戏运行需通过') >= 0)
+                platform = '可能为 Uplay 激活';
+            $('.game-sale-block .tag-list').after('<div id="sgk_steam_warning" class="sgk_warning_text">' + warn_icon + platform + '</div>');
         }
     }, 1200);
 });
