@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180225.1
+// @version     20180304.1
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -134,8 +134,8 @@ function refresh() {
 }
 
 function update() {
-    var username = GM_getValue('user_name');
-    var userpass = GM_getValue('user_pwd');
+    var username = GM_getValue('username');
+    var userpass = GM_getValue('password');
     if (!username) {
         username = prompt('请输入杉果账号');
         if (!username)
@@ -151,8 +151,8 @@ function update() {
 		'type': 'client'
 	}));
     if (tokens.access_token) {
-        GM_setValue('user_name', username);
-        GM_setValue('user_pwd', userpass);
+        GM_setValue('username', username);
+        GM_setValue('password', userpass);
         GM_setValue('refresh_token', tokens.refresh_token);
         GM_setValue('access_token', tokens.access_token);
     } else {
@@ -212,8 +212,8 @@ function get_key() {
 function clear_user() {
     if (!confirm('将会清除 SGK 插件存储的杉果账号数据。\n继续吗？'))
         return;
-    GM_deleteValue('user_name');
-    GM_deleteValue('user_pwd');
+    GM_deleteValue('username');
+    GM_deleteValue('password');
     GM_deleteValue('refresh_token');
     GM_deleteValue('access_token');
     update_login_ui();
@@ -257,7 +257,7 @@ function add_toggle_button() {
 }
 
 function update_login_ui() {
-    var username = GM_getValue('user_name');
+    var username = GM_getValue('username');
     if (username) {
         $('#sgk_stored_acc').text('存储的账号: ' + username);
         $('#sgk_get_key').text('点击提取序列号');
@@ -291,7 +291,17 @@ function check_chinese() {
     return false;
 }
 
+function update_version() {
+    if (GM_getValue('user_name')) {
+        GM_setValue('username', GM_getValue('user_name'));
+        GM_setValue('password', GM_getValue('user_pwd'));
+        GM_deleteValue('user_name');
+        GM_deleteValue('user_pwd');
+    }
+}
+
 $(function () {
+    update_version();
     setCSS();
     window.setInterval(function () {
         remove_client();
