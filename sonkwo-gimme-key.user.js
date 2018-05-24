@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180418.1
+// @version     20180524.1
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -18,6 +18,7 @@
 var product_id = null,
     game_id = null,
     client_removed = false;
+var css;
 
 function setCSS() {
     css = [
@@ -171,7 +172,13 @@ function get_key() {
             url: '/api/game_key.json',
             data: {
                 'game_id': game_id,
-                'access_token': access_token
+                'sonkwo_client': 'client',
+                'sonkwo_version': '2.5.1.0517',
+                'from': 'client'
+            },
+            headers: {
+                'Accept': 'application/vnd.sonkwo.v5+json',
+                'Authorization': 'Bearer ' + access_token
             },
             method: 'GET',
             async: false,
