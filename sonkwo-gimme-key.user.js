@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180524.2
+// @version     20180524.3
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -191,6 +191,7 @@ function get_key() {
         if (keys.game_keys) {
             keys = keys.game_keys;
             $('#sgk_keybox').remove();
+            $('#sgk_keyboxdown').remove();
             var keybox = $('<div id="sgk_keybox" style="display:none"></div>');
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
@@ -199,6 +200,7 @@ function get_key() {
                 keybox.append('<input type="text" class="sgk_key_text" readonly="readonly" onfocus="this.select();" value="' + key.code + '" />');
             }
             $('.btns-block').after(keybox);
+            $('#sgk_keybox').after('<div id="sgk_keyboxdown" style="height:20px"></div>');
             $('.sgk_key_copy').click(function () {
                 copy_key($(this));
             });
@@ -207,10 +209,7 @@ function get_key() {
             if (refresh() !== false)
                 getKey();
         } else {
-            if (keys.message == 'unknow error')
-                alert('来自杉果的错误: ' + keys.message + '\n插件建议：检查该账号是否确实购买了此物品，检查插件的账号与杉果登录的账号是否一致，否则清除账号数据后重试。');
-            else
-                alert('来自杉果的错误: ' + keys.message);
+            alert('提取失败！\n插件建议：检查该账号是否确实购买了此物品，检查插件的账号与杉果登录的账号是否一致，否则清除账号数据后重试。');
         }
     }
 }
