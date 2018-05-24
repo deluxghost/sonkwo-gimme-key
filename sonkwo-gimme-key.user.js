@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180524.1
+// @version     20180524.2
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -18,10 +18,9 @@
 var product_id = null,
     game_id = null,
     client_removed = false;
-var css;
 
 function setCSS() {
-    css = [
+    var css = [
         "#sgk_show_box {",
         "    padding: 10px 20px 0 20px;",
         "}",
