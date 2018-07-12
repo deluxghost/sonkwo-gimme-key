@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180524.3
+// @version     20180712.2
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -95,17 +95,21 @@ function setCSS() {
 	}
 }
 
-function getToken(jsondata) {
+function getToken(user, pass) {
     var tokens;
     $.ajax({
-        url: '/oauth2/token.json',
+        url: '/api/sign_in.json?sonkwo_client=client&sonkwo_version=2.5.1.0517&locale=js',
         method: 'POST',
         async: false,
         contentType: 'application/json, text/plain, */*',
-        data: jsondata,
+        data: '{"account":{"email_or_phone_number_eq":"' + user + '","password":"' + pass + '"},"_code":"","_key":""}',
+        headers: {
+            'Accept': 'application/vnd.sonkwo.v5+json'
+        },
         complete: function (data) {
             if (data.status == '401') {
                 tokens = 401;
+                alert('登录失败！\n插件建议：检查用户名和密码是否正确，清除账号数据后重试。');
             } else {
                 tokens = data.responseJSON;
             }
@@ -114,7 +118,7 @@ function getToken(jsondata) {
     return tokens;
 }
 
-function refresh() {
+/*function refresh() {
     var refresh_token = GM_getValue('refresh_token');
     var tokens = getToken(JSON.stringify({
         'grant_type': 'refresh_token',
@@ -131,7 +135,7 @@ function refresh() {
         alert('来自杉果的错误: ' + tokens.message + '\n插件建议：检查用户名和密码是否正确，清除账号数据后重试。');
     }
     update_login_ui();
-}
+}*/
 
 function update() {
     var username = GM_getValue('username');
@@ -144,12 +148,7 @@ function update() {
         if (!userpass)
             return false;
     }
-    var tokens = getToken(JSON.stringify({
-		'grant_type': 'password',
-		'login_name': username,
-		'password': userpass,
-		'type': 'client'
-	}));
+    var tokens = getToken(username, userpass);
     if (tokens.access_token) {
         GM_setValue('username', username);
         GM_setValue('password', userpass);
@@ -159,13 +158,15 @@ function update() {
         alert('来自杉果的错误: ' + tokens.message + '\n插件建议：检查用户名和密码是否正确，清除账号数据后重试。');
         return false;
     }
+    update_login_ui();
 }
 
 function get_key() {
     var access_token = GM_getValue("access_token");
     var resp;
     if (!access_token) {
-        refresh();
+        if (update() !== false)
+                getKey();
     } else {
         $.ajax({
             url: '/api/game_key.json',
@@ -181,14 +182,13 @@ function get_key() {
             },
             method: 'GET',
             async: false,
-            complete: function (data) {
-                if (data.status == 401)
-                    refresh();
+            complete:
+            function (data) {
                 resp = data;
             }
         });
         var keys = resp.responseJSON;
-        if (keys.game_keys) {
+        if (keys && keys.game_keys) {
             keys = keys.game_keys;
             $('#sgk_keybox').remove();
             $('#sgk_keyboxdown').remove();
@@ -206,10 +206,10 @@ function get_key() {
             });
             keybox.slideDown();
         } else if (resp.status === 401) {
-            if (refresh() !== false)
+            if (update() !== false)
                 getKey();
         } else {
-            alert('提取失败！\n插件建议：检查该账号是否确实购买了此物品，检查插件的账号与杉果登录的账号是否一致，否则清除账号数据后重试。');
+            alert('提取失败！\n插件建议：\n 1. 首先重试一下\n 2. 检查该账号是否确实购买了此物品\n 3. 检查插件的账号与杉果登录的账号是否一致\n 4. 清除账号数据后重试\n如果一切尝试皆无效，请到插件原帖或者 GitHub 反馈。');
         }
     }
 }
@@ -305,10 +305,11 @@ function update_version() {
     }
 }
 
+
 $(function () {
     update_version();
     setCSS();
-    window.setInterval(function () {
+    var mainFunc = function () {
         remove_client();
         if ($('.tag-list .brief-info-placeholder').text().trim() == '')
             $('.tag-list .brief-info-placeholder').remove();
@@ -350,5 +351,23 @@ $(function () {
                 platform = 'Uplay 激活';
             $('.game-sale-block .tag-list').after('<div id="sgk_steam_warning" class="sgk_warning_text">' + warn_icon + platform + '</div>');
         }
-    }, 1200);
+    }
+    var mainLoop = setInterval(mainFunc, 1200);
+    var fireOnHashChangesToo = true;
+    var pageURLCheckTimer = setInterval(
+        function () {
+            if (this.lastPathStr !== location.pathname
+                || this.lastQueryStr !== location.search
+                || (fireOnHashChangesToo && this.lastHashStr !== location.hash)
+               ) {
+                this.lastPathStr = location.pathname;
+                this.lastQueryStr = location.search;
+                this.lastHashStr = location.hash;
+                clearInterval(mainLoop);
+                $('#sgk_keybox').remove();
+                $('#sgk_keyboxdown').remove();
+                $('.sgk_warning_text').remove();
+                mainLoop = setInterval(mainFunc, 1200);
+            }
+        }, 200);
 });
