@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180712.2
+// @version     20180720.1
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -338,16 +338,16 @@ $(function () {
         if (!$('#sgk_cantunredeem_warning').length && $('.new-content-left').text().search('不支持反激活') >= 0) {
             $('.game-sale-block .tag-list').after('<div id="sgk_cantunredeem_warning" class="sgk_warning_text">' + warn_icon + '不支持反激活</div>');
         }
-        if (!$('#sgk_securom_warning').length && $('.new-content-left').text().search('【激活】 游戏为Securom加密') >= 0) {
+        if (!$('#sgk_securom_warning').length && $('.new-content-left').text().replace(/ /g, '').search('【激活】游戏为Securom加密') >= 0) {
             var max_redeem = /(\d*)台计算机激活/.exec($('.new-content-left').text());
             var max_redeem_str = '';
             if (max_redeem !== null)
                 max_redeem_str = ' (×' + max_redeem[1] + ')';
             $('.game-sale-block .tag-list').after('<div id="sgk_securom_warning" class="sgk_warning_text">' + warn_icon + 'Securom 加密' + max_redeem_str + '</div>');
         }
-        if (!$('#sgk_steam_warning').length && $('.new-content-left').text().search('【激活】 Steam平台安装激活') < 0) {
+        if (!$('#sgk_steam_warning').length && $('.new-content-left').text().replace(/ /g, '').search('【激活】Steam平台安装激活') < 0) {
             var platform = '可能非 Steam 激活';
-            if ($('.new-content-left').text().search('【激活】 Uplay平台安装激活') >= 0)
+            if ($('.new-content-left').text().replace(/ /g, '').search('【激活】Uplay平台安装激活') >= 0)
                 platform = 'Uplay 激活';
             $('.game-sale-block .tag-list').after('<div id="sgk_steam_warning" class="sgk_warning_text">' + warn_icon + platform + '</div>');
         }
