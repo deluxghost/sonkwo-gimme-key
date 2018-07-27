@@ -5,7 +5,7 @@
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
 // @icon        https://www.sonkwo.com/favicon.ico
-// @version     20180720.1
+// @version     20180727.1
 // @run-at      document-end
 // @require     https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js
 // @grant       GM_xmlhttpRequest
@@ -323,8 +323,9 @@ $(function () {
         else
             game_id = game_id[1];
         var purchased = $('.btn-common-css.already-pur');
-        if (!$('#sgk_get_key').length && !$('#sgk_show_box').length || purchased.length) {
-            if (purchased.length) {
+        var blocked = $('.btn-common-css.already-pur.ip-block-info');
+        if (!$('#sgk_get_key').length && !$('#sgk_show_box').length) {
+            if (purchased.length && !blocked.length) {
                 $('#sgk_show_box').remove();
                 open_sgk();
             } else {
