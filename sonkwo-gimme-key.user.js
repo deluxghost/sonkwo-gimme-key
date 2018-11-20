@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        Sonkwo Gimme Key
 // @namespace   https://github.com/deluxghost/sonkwo-gimme-key
+// @updateURL   https://github.com/deluxghost/sonkwo-gimme-key/raw/master/sonkwo-gimme-key.user.js
 // @description 在线提取杉果序列号
 // @author      deluxghost
 // @include     https://www.sonkwo.com/*
